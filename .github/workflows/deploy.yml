@@ -1,4 +1,4 @@
-name: Deploy
+name: admin_bengkelsehati
 on: 
   push:
     branches:
@@ -17,3 +17,5 @@ jobs:
         port: ${{ secrets.PORT }}
         script: |
           sudo branch=master /var/repo/nama-repository.git/hooks/post-receive
+    - run: npm install
+    - run: npm run build
