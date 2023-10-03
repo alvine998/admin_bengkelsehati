@@ -9,7 +9,7 @@ jobs:
     steps:
     - name: Build master
       if: github.ref == 'refs/heads/master'
-      uses: alvine998/ssh-action@master
+      uses: alvine998/admin_bengkelsehati@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
