@@ -1,0 +1,88 @@
+import Link from 'next/link'
+import { useRouter } from 'next/router'
+import React from 'react'
+import { FaTachometerAlt, FaBuilding, FaBookmark, FaUserTie } from 'react-icons/fa'
+import { FaBuildingColumns, FaMoneyBill1Wave, FaTicket, FaUser } from 'react-icons/fa6'
+import { GrTransaction } from 'react-icons/gr'
+export default function Sidebar() {
+    const router = useRouter();
+    const navigations = [
+        {
+            name: "Dashboard",
+            href: "/main/dashboard",
+            active: router.pathname?.includes('dashboard'),
+            icon: <FaTachometerAlt className='text-xl' />
+        },
+        {
+            name: "Lokasi",
+            href: "/main/place",
+            active: router.pathname?.includes('place'),
+            icon: <FaBuilding className='text-xl' />
+        },
+        {
+            name: "Banner",
+            href: "/main/banner",
+            active: router.pathname?.includes('banner'),
+            icon: <FaBookmark className='text-xl' />
+        },
+        {
+            name: "Voucher",
+            href: "/main/voucher",
+            active: router.pathname?.includes('voucher'),
+            icon: <FaTicket className='text-xl' />
+        },
+        {
+            name: "Bank",
+            href: "/main/bank",
+            active: router.pathname?.includes('bank'),
+            icon: <FaBuildingColumns className='text-xl' />
+        },
+        {
+            name: "Keuangan",
+            href: "/main/finance",
+            active: router.pathname?.includes('finance'),
+            icon: <FaMoneyBill1Wave className='text-xl' />
+        },
+        {
+            name: "Transaksi",
+            href: "/main/transaction",
+            active: router.pathname?.includes('transaction'),
+            icon: <GrTransaction className='text-xl' />
+        },
+        {
+            name: "Pengguna Aplikasi",
+            href: "/main/user",
+            active: router.pathname?.includes('user'),
+            icon: <FaUser className='text-xl' />
+        },
+        {
+            name: "Pengguna Admin",
+            href: "/main/admin",
+            active: router.pathname?.includes('admin'),
+            icon: <FaUserTie className='text-xl' />
+        },
+    ]
+    
+    return (
+        <div className='bg-white md:w-1/4'>
+            <div className='bg-green-400 h-10'>
+
+            </div>
+            <div className='md:p-5'>
+                <img src='https://firebasestorage.googleapis.com/v0/b/bengkel-muslimah.appspot.com/o/LOGO%20BS%20PNG.png?alt=media&token=40acc36e-3a9b-4bf9-87ed-f0b920afa528' className='md:w-24 md:h-20 md:ml-20' />
+            </div>
+            <div className='md:mt-5'>
+                {
+                    navigations?.map((val: any, i: number) => (
+                        <div className={`hover:bg-gray-400 ${val.active && 'bg-gray-400'} w-full md:p-2 md:pl-5 duration-150 h-auto mt-1`}>
+                            <Link href={val?.href} key={i} className='flex gap-3 items-center'>
+                                {val?.icon && val?.icon}
+                                <p>{val?.name}</p>
+                            </Link>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+    )
+}
