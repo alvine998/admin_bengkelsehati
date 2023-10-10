@@ -32,9 +32,9 @@ export default function Sidebar() {
             icon: <FaTicket className='text-xl' />
         },
         {
-            name: "Bank",
-            href: "/main/bank",
-            active: router.pathname?.includes('bank'),
+            name: "Pembayaran",
+            href: "/main/purchase",
+            active: router.pathname?.includes('purchase'),
             icon: <FaBuildingColumns className='text-xl' />
         },
         {
@@ -62,15 +62,15 @@ export default function Sidebar() {
             icon: <FaUserTie className='text-xl' />
         },
     ]
-    
+
     return (
         <div className='bg-white md:w-1/4'>
-            <div className='bg-green-400 h-10'>
+            <div className='bg-green-400 h-16'>
+                <div className='md:pt-2'>
+                    <img src='https://firebasestorage.googleapis.com/v0/b/bengkel-muslimah.appspot.com/o/LOGO%20BS%20PNG.png?alt=media&token=40acc36e-3a9b-4bf9-87ed-f0b920afa528' className='md:w-16 md:h-12 md:ml-20' />
+                </div>
+            </div>
 
-            </div>
-            <div className='md:p-5'>
-                <img src='https://firebasestorage.googleapis.com/v0/b/bengkel-muslimah.appspot.com/o/LOGO%20BS%20PNG.png?alt=media&token=40acc36e-3a9b-4bf9-87ed-f0b920afa528' className='md:w-24 md:h-20 md:ml-20' />
-            </div>
             <div className='md:mt-5'>
                 {
                     navigations?.map((val: any, i: number) => (

@@ -10,6 +10,9 @@ import React, { useState, useEffect } from 'react'
 import DataTable, { ExpanderComponentProps } from 'react-data-table-component'
 import Swal from 'sweetalert2'
 import { FaPencilAlt, FaTrashAlt } from 'react-icons/fa'
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { storage } from '@/config/firebase'
+import { Purchase } from '@/types/purchase'
 
 export async function getServerSideProps(context: any) {
     try {
@@ -17,7 +20,7 @@ export async function getServerSideProps(context: any) {
         const filters = {
 
         }
-        const result = await axios.get(CONFIG.base_url_api + `/admins?pagination=true&search=${search || ""}&page=${page-1 || 0}`, {
+        const result = await axios.get(CONFIG.base_url_api + `/purchases?pagination=true&search=${search || ""}&page=${page - 1 || 0}`, {
             headers: { "bearer-token": 'bengkelsehati51' }
         })
         console.log(result.data);
@@ -35,10 +38,26 @@ export async function getServerSideProps(context: any) {
     }
 }
 
-export default function Admin({ table }: any) {
+export default function Bank({ table }: any) {
     const router = useRouter();
     const [show, setShow] = useState<boolean>(false)
     const [modal, setModal] = useModal<any>()
+    const [selectType, setSelectType] = useState('bank')
+    const [imageData, setImageData] = useState<any>()
+    const handleUpload = (e: any) => {
+        const preview = e.target.files[0]
+        const fileName = preview?.name
+        const storageRef = ref(storage, `/files/${fileName}`);
+        uploadBytes(storageRef, preview)
+            .then(async (snapshot) => {
+                console.log('Image uploaded successfully!');
+                const url = await getDownloadURL(storageRef)
+                setImageData({ url: url })
+            })
+            .catch((error) => {
+                console.error('Error uploading image: ', error);
+            });
+    }
 
     const [loading, setLoading] = useState<boolean>(false)
 
@@ -49,11 +68,11 @@ export default function Admin({ table }: any) {
         try {
             const payload = {
                 ...formData,
-                password: !formData?.password ? modal.data.password : formData?.password
+                image: imageData?.url || null
             }
-            const result = await modal.key == 'create' ? axios.post(CONFIG.base_url_api + '/admin', payload, {
+            const result = await modal.key == 'create' ? axios.post(CONFIG.base_url_api + '/purchase', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
-            }) : axios.patch(CONFIG.base_url_api + '/admin', payload, {
+            }) : axios.patch(CONFIG.base_url_api + '/purchase', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
             })
             Swal.fire({
@@ -78,7 +97,7 @@ export default function Admin({ table }: any) {
         const formData: any = Object.fromEntries(new FormData(e.target))
         setLoading(true)
         try {
-            const result = await axios.delete(CONFIG.base_url_api + `/admin?id=${formData?.id}`, {
+            const result = await axios.delete(CONFIG.base_url_api + `/purchase?id=${formData?.id}`, {
                 headers: { "bearer-token": 'bengkelsehati51' }
             })
             Swal.fire({
@@ -102,32 +121,32 @@ export default function Admin({ table }: any) {
         {
             name: "Nama",
             right: false,
-            selector: (row: Admin) => row?.name
+            selector: (row: Purchase) => row?.name
         },
         {
-            name: "No Handphone",
+            name: "No Rekening",
             right: false,
-            selector: (row: Admin) => row?.phone
+            selector: (row: Purchase) => row?.account_number || "-"
         },
         {
-            name: "Email",
+            name: "Nama Pemilik",
             right: false,
-            selector: (row: Admin) => row?.email
+            selector: (row: Purchase) => row?.account_name || "-"
         },
         {
-            name: "Peran",
+            name: "Tipe",
             right: false,
-            selector: (row: Admin) => row?.role?.toUpperCase()?.replaceAll("_", " ")
+            selector: (row: Purchase) => row?.type?.toUpperCase()
         },
         {
-            name: "Status",
+            name: "Foto",
             right: false,
-            selector: (row: Admin) => row?.status == 'active' ? "Aktif" : "Tidak Aktif"
+            selector: (row: Purchase) => row?.image ? <a href={row.image} target='_blank' className='text-blue-500' >Lihat</a> : "-"
         },
         {
             name: "Aksi",
             right: false,
-            selector: (row: Admin) => <>
+            selector: (row: Purchase) => <>
                 <button type='button' onClick={() => {
                     setModal({ ...modal, open: true, data: row, key: "update" })
                 }} >
@@ -145,36 +164,10 @@ export default function Admin({ table }: any) {
     useEffect(() => {
         setShow(typeof window !== 'undefined')
     }, [])
-    // const ExpandedComponent: React.FC<ExpanderComponentProps<any>> = ({ data }) => {
-    //     return (
-    //         <div className='p-10'>
-    //             <div className=' flex gap-5'>
-    //                 <p>Tempat Lahir :</p>
-    //                 <p>{data?.birth_place}</p>
-    //             </div>
-    //             <div className='flex gap-5'>
-    //                 <p>Tanggal Lahir :</p>
-    //                 <p>{moment(data?.birth_date).format("DD-MM-YYYY")}</p>
-    //             </div>
-    //             <div className='flex gap-5'>
-    //                 <p>Klasifikasi :</p>
-    //                 <p>{data?.clasification}</p>
-    //             </div>
-    //             <div className='flex gap-5'>
-    //                 <p>Jenis Personel :</p>
-    //                 <p>{data?.personel_type}</p>
-    //             </div>
-    //             <div className='flex gap-5'>
-    //                 <p>Nama Instansi :</p>
-    //                 <p>{data?.instance}</p>
-    //             </div>
-    //         </div>
-    //     )
-    // }
     return (
         <Layout>
             <div>
-                <h1 className='text-xl font-semibold'>Pengguna Admin</h1>
+                <h1 className='text-xl font-semibold'>Pembayaran</h1>
             </div>
             <div className='mt-5'>
                 <div>
@@ -218,42 +211,63 @@ export default function Admin({ table }: any) {
                     <Modal
                         open={modal.open}
                         setOpen={() => { setModal({ ...modal, open: false }) }}
-                        title={modal.key == 'create' ? 'Tambah Data Admin' : 'Ubah Data Admin'}
+                        title={modal.key == 'create' ? 'Tambah Data Pembayaran' : 'Ubah Data Pembayaran'}
                     >
                         <form onSubmit={save}>
                             <input type="text" className='hidden' value={modal?.data?.id} name='id' />
-                            <Input label='Nama' placeholder='Masukkan Nama' name='name' defaultValue={modal?.data?.name || ""} required />
-                            <Input label='Email' placeholder='Masukkan Email' name='email' type='email' defaultValue={modal?.data?.email || ""} required />
-                            <Input label='No Handphone' placeholder='Masukkan No Handphone' name='phone' type='number' defaultValue={modal?.data?.phone || ""} required />
-                            <Input label='Password' placeholder='Masukkan Password' name='password' type='password' defaultValue={""} required={modal.key === 'create'} />
                             <div>
-                                <label htmlFor="status">Peran</label>
+                                <label htmlFor="status">Jenis Pembayaran</label>
                                 <div id='status' className='flex gap-5'>
                                     <div className='flex gap-2'>
-                                        <input type='radio' defaultChecked={modal?.data?.role === "super_admin"} value={'super_admin'} name='role' />
-                                        <span>Super Admin</span>
+                                        <input type='radio' defaultChecked={modal?.data?.type === "bank" || selectType === "bank"} onChange={(e) => {
+                                            setSelectType(e.target.value)
+                                        }} value={'bank'} name='type' />
+                                        <span>BANK</span>
                                     </div>
                                     <div className='flex gap-2'>
-                                        <input type='radio' defaultChecked={modal?.data?.role === "admin"} value={'admin'} name='role' />
-                                        <span>Admin</span>
+                                        <input type='radio' defaultChecked={modal?.data?.type === "qris"} onChange={(e) => {
+                                            setSelectType(e.target.value)
+                                        }} value={'qris'} name='type' />
+                                        <span>QRIS</span>
+                                    </div>
+                                    <div className='flex gap-2'>
+                                        <input type='radio' defaultChecked={modal?.data?.type === "dana"} onChange={(e) => {
+                                            setSelectType(e.target.value)
+                                        }} value={'dana'} name='type' />
+                                        <span>DANA</span>
                                     </div>
                                 </div>
                             </div>
                             {
-                                modal.key == 'update' ?
-                                    <div>
-                                        <label htmlFor="status2">Status</label>
-                                        <div id='status2' className='flex gap-5'>
-                                            <div className='flex gap-2'>
-                                                <input type='radio' defaultChecked={modal?.data?.status === "active"} value={'active'} name='status' />
-                                                <span>Aktif</span>
-                                            </div>
-                                            <div className='flex gap-2'>
-                                                <input type='radio' defaultChecked={modal?.data?.status === "nonactive"} value={'nonactive'} name='status' />
-                                                <span>Non Aktif</span>
-                                            </div>
-                                        </div>
-                                    </div> : ""
+                                selectType == 'bank' &&
+                                <>
+                                    <Input label='Nama Bank' placeholder='Masukkan Nama Bank' name='name' defaultValue={modal?.data?.name || ""} required />
+                                    <Input label='Nama Pemilik Rekening' placeholder='Masukkan Nama Pemilik Rekening' name='account_name' defaultValue={modal?.data?.account_name || ""} required />
+                                    <Input label='No Rekening' placeholder='Masukkan No Rekening' name='account_number' type='number' defaultValue={modal?.data?.account_number || ""} required />
+                                </>
+                            }
+                            {
+                                selectType == 'qris' &&
+                                <>
+                                    <Input label='Nama Usaha' placeholder='Masukkan Nama Usaha' name='name' defaultValue={modal?.data?.name || ""} required />
+                                    {/* <Input label='Nama Pemilik Rekening' placeholder='Masukkan Nama Pemilik Rekening' name='accouont_name' defaultValue={modal?.data?.accouont_name || ""} required /> */}
+                                    <Input label='No QRIS' placeholder='Masukkan No QRIS' name='account_number' type='number' defaultValue={modal?.data?.account_number || ""} required />
+                                    <Input label='Gambar QRIS' accept='image/*' name='image' type='file' defaultValue={modal?.data?.image || ""} onChange={(e) => { handleUpload(e) }} required />
+                                    <div className='flex items-center justify-center'>
+                                        {
+                                            imageData &&
+                                            <img src={imageData.url} className='w-[300px] md:h-[300px]' alt='image-qris' />
+                                        }
+                                    </div>
+                                </>
+                            }
+                            {
+                                selectType == 'dana' &&
+                                <>
+                                    <Input label='Nama Pemilik' placeholder='Masukkan Nama Pemilik' name='name' defaultValue={modal?.data?.name || ""} required />
+                                    {/* <Input label='Nama Pemilik Rekening' placeholder='Masukkan Nama Pemilik Rekening' name='accouont_name' defaultValue={modal?.data?.accouont_name || ""} required /> */}
+                                    <Input label='No Dana' placeholder='Masukkan No Dana' name='account_number' type='number' defaultValue={modal?.data?.account_number || ""} required />
+                                </>
                             }
                             <button disabled={loading} className='md:mt-4 w-full h-9 bg-green-500 hover:bg-green-600 rounded-lg justify-center items-center text-center text-white'>
                                 {loading ? "Menyimpan..." : "Simpan"}
@@ -266,7 +280,7 @@ export default function Admin({ table }: any) {
                     <Modal
                         open={modal.open}
                         setOpen={() => { setModal({ ...modal, open: false }) }}
-                        title='Hapus Data Admin'
+                        title='Hapus Data Pembayaran'
                     >
                         <form onSubmit={remove}>
                             <input type="text" className='hidden' value={modal.data.id} name='id' />
