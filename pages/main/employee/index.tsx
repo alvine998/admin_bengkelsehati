@@ -215,7 +215,7 @@ export default function Employee({ table, places }: any) {
                 </div>
                 <div>
                     <div className='my-2 md:w-1/4'>
-                        <div className='mt-2 outline outline-green-300 focus:outline-green-400 rounded-md p-1'>
+                        <div className='mt-2 ring-1 ring-gray-300 focus:outline-green-400 rounded-md p-1'>
                             <select name="place_id" id='locs' onChange={(e) => {
                                 router?.push(`?place_id=${e.target.value}`)
                             }} className='w-full focus:ring-0 focus:outline-none'>

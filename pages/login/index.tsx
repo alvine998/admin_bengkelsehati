@@ -1,7 +1,12 @@
 import Input from '@/components/Input';
-import React, { useState } from 'react'
+import { CONFIG } from '@/config';
+import axios from 'axios';
+import { useRouter } from 'next/router';
+import React, { useEffect, useState } from 'react'
+import Swal from 'sweetalert2';
 
 export default function Login() {
+    const router = useRouter();
     const handleLogin = async (e: any) => {
         e?.preventDefault()
         const formData: any = Object.fromEntries(new FormData(e.target))
@@ -10,10 +15,34 @@ export default function Login() {
                 ...formData
             }
             console.log(payload);
+            const result = await axios.post(CONFIG.base_url_api + `/admin/login`, payload, {
+                headers: { "bearer-token": 'bengkelsehati51' }
+            })
+            localStorage.setItem('session', JSON.stringify(result.data.result))
+            Swal.fire({
+                text: "Berhasil Login",
+                icon: "success"
+            })
+            router.push('/main/dashboard')
         } catch (error) {
             console.log(error);
+            Swal.fire({
+                text: "Gagal Login",
+                icon: "error"
+            })
         }
     }
+
+    const handleSession = async () => {
+        const checkSession = await localStorage.getItem("session")
+        if (checkSession) {
+            router.push('/main/dashboard')
+        }
+    }
+    useEffect(() => {
+        handleSession()
+    }, [])
+
     return (
         <div className='flex h-[100vh]'>
             <div className='md:block hidden w-full bg-green-500'>
