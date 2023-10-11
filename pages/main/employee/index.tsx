@@ -15,24 +15,28 @@ import { storage } from '@/config/firebase'
 import { Purchase } from '@/types/purchase'
 import { Place } from '@/types/place'
 import { toMoney } from '@/utils'
+import { Employee } from '@/types/employee'
 
 export async function getServerSideProps(context: any) {
     try {
-        const { search, page } = context.query;
+        const { search, page, place_id } = context.query;
         const filters = {
 
         }
-        const result = await axios.get(CONFIG.base_url_api + `/employees?pagination=true&search=${search || ""}&page=${page - 1 || 0}`, {
+        const result = await axios.get(CONFIG.base_url_api + `/employees?pagination=true&search=${search || ""}&page=${page - 1 || 0}&place_id=${place_id || ""}`, {
             headers: { "bearer-token": 'bengkelsehati51' }
         })
-        console.log(result.data);
+        const places = await axios.get(CONFIG.base_url_api + `/places?pagination=false`, {
+            headers: { "bearer-token": 'bengkelsehati51' }
+        })
         return {
             props: {
                 table: {
                     ...result.data,
                     data: result.data.items.rows || [],
                     total_items: result.data.items.count || 0
-                }
+                },
+                places: places.data.items.rows
             }
         }
     } catch (error) {
@@ -40,13 +44,15 @@ export async function getServerSideProps(context: any) {
     }
 }
 
-export default function Place({ table }: any) {
+export default function Employee({ table, places }: any) {
     const router = useRouter();
     const [show, setShow] = useState<boolean>(false)
     const [modal, setModal] = useModal<any>()
-    const [selectType, setSelectType] = useState('bank')
-    const [imageData, setImageData] = useState<any>([])
+    const [selectPlace, setSelectPlace] = useState<any>()
+    const [loading, setLoading] = useState<boolean>(false)
+    const [imageData, setImageData] = useState<any>()
     const handleUpload = (e: any) => {
+        setLoading(true)
         const preview = e.target.files[0]
         const fileName = preview?.name
         const storageRef = ref(storage, `/files/${fileName}`);
@@ -54,14 +60,22 @@ export default function Place({ table }: any) {
             .then(async (snapshot) => {
                 console.log('Image uploaded successfully!');
                 const url = await getDownloadURL(storageRef)
-                setImageData([...imageData, { url: url }])
+                setImageData({ url: url })
+                setLoading(false)
             })
             .catch((error) => {
                 console.error('Error uploading image: ', error);
+                setLoading(false)
             });
     }
 
-    const [loading, setLoading] = useState<boolean>(false)
+    const statusOptions = [
+        { value: "", label: "Pilih Status" },
+        { value: "available", label: "Onsite" },
+        { value: "busy", label: "Sibuk" },
+        { value: "off", label: "Libur" },
+        { value: "out", label: "Tidak Aktif" }
+    ]
 
     const save = async (e: any) => {
         e?.preventDefault()
@@ -70,13 +84,14 @@ export default function Place({ table }: any) {
         try {
             const payload = {
                 ...formData,
-                photo: imageData || null
+                photo: imageData?.url || null
             }
-            const result = await modal.key == 'create' ? axios.post(CONFIG.base_url_api + '/employee', payload, {
+            const result = modal.key == 'create' ? await axios.post(CONFIG.base_url_api + '/employee', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
-            }) : axios.patch(CONFIG.base_url_api + '/employee', payload, {
+            }) : await axios.patch(CONFIG.base_url_api + '/employee', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
             })
+            console.log(result.data, 'error');
             Swal.fire({
                 text: "Berhasil menyimpan data",
                 icon: 'success'
@@ -85,10 +100,10 @@ export default function Place({ table }: any) {
             setImageData(null)
             router.push('')
             setLoading(false)
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
             Swal.fire({
-                text: "Gagal menyimpan data",
+                text: `${error.response.data.error_message}`,
                 icon: 'error'
             })
             setLoading(false)
@@ -122,47 +137,48 @@ export default function Place({ table }: any) {
 
     const columns: any = [
         {
-            name: "Nama Usaha",
+            name: "Nama",
             right: false,
-            selector: (row: Place) => row?.name
+            selector: (row: Employee) => row?.name
         },
         {
             name: "Alamat",
             right: false,
             width: '250px',
-            selector: (row: Place) => row?.address + ", " + row?.cities + ", " + row?.province
+            selector: (row: Employee) => row?.address
         },
         {
-            name: "Biaya Jasa",
+            name: "Lokasi",
             right: false,
-            selector: (row: Place) => toMoney(row?.price) || "-"
+            width: '200px',
+            selector: (row: Employee) => row?.place_name || "-"
         },
         {
-            name: "Tipe",
+            name: "Tempat Tanggal Lahir",
             right: false,
-            selector: (row: Place) => row?.long ? <a href={`https://maps.google.com/?q=${row?.lat},${row?.long}`} target='_blank' className='text-blue-500' >Lihat Lokasi</a> : "-"
+            width: '200px',
+            selector: (row: Employee) => row?.birth_place + ", " + moment(row?.birth_date).format("DD-MM-YYYY")
         },
         {
             name: "Foto",
             right: false,
-            selector: (row: Place) => row?.photo?.length > 0 ? <>
-                {
-                    row?.photo?.map((v: any, i: number) => (
-                        <>
-                            <a href={v.url} key={i} target='_blank' className='text-blue-500' >Lihat Foto {i + 1}</a>
-                            <br />
-                        </>
-                    ))
-                }
+            selector: (row: Employee) => row?.photo ? <>
+                <a href={row?.photo} target='_blank' className='text-blue-500' >Lihat</a>
             </> : "-"
+        },
+        {
+            name: "Status",
+            right: false,
+            selector: (row: Employee) => statusOptions.find((v: any) => v.value == row?.status)?.label
         },
         {
             name: "Aksi",
             right: false,
-            selector: (row: Place) => <>
+            selector: (row: Employee) => <>
                 <button type='button' onClick={() => {
                     setModal({ ...modal, open: true, data: row, key: "update" })
-                    setImageData(row?.photo || [])
+                    setImageData({ url: row?.photo })
+                    setSelectPlace({ name: row?.place_name })
                 }} >
                     <FaPencilAlt className='text-green-500 w-7' />
                 </button>
@@ -181,7 +197,7 @@ export default function Place({ table }: any) {
     return (
         <Layout>
             <div>
-                <h1 className='text-xl font-semibold'>Lokasi</h1>
+                <h1 className='text-xl font-semibold'>Pegawai</h1>
             </div>
             <div className='mt-5'>
                 <div>
@@ -196,6 +212,20 @@ export default function Place({ table }: any) {
                         </button>
                     </div>
                     <Input label='' placeholder='Cari disini...' onChange={(e) => { router.push(`?search=${e.target.value}`) }} />
+                </div>
+                <div>
+                    <div className='my-2 md:w-1/4'>
+                        <div className='mt-2 outline outline-green-300 focus:outline-green-400 rounded-md p-1'>
+                            <select name="place_id" id='locs' onChange={(e) => {
+                                router?.push(`?place_id=${e.target.value}`)
+                            }} className='w-full focus:ring-0 focus:outline-none'>
+                                <option value="" selected>Pilih Lokasi</option>
+                                {
+                                    places?.map((v: any, i: number) => <option value={v?.id} key={i} selected={v?.id == modal?.data?.place_id} >{v?.name}</option>)
+                                }
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 {
                     show ?
@@ -229,15 +259,15 @@ export default function Place({ table }: any) {
                     >
                         <form onSubmit={save}>
                             <input type="text" className='hidden' value={modal?.data?.id} name='id' />
-                            <Input label='Nama Usaha' placeholder='Masukkan Nama Usaha' name='name' defaultValue={modal?.data?.name || ""} required />
+                            <Input label='Nama Pegawai' placeholder='Masukkan Nama Pegawai' name='name' defaultValue={modal?.data?.name || ""} required />
                             <Input label='Alamat' placeholder='Masukkan Alamat' name='address' type='text' defaultValue={modal?.data?.address || ""} required />
                             <div className='flex md:flex-row flex-col gap-2'>
-                                <Input label='Provinsi' placeholder='Masukkan Provinsi' name='province' type='text' defaultValue={modal?.data?.province || ""} required />
-                                <Input label='Kab/Kota' placeholder='Masukkan Kab/Kota' name='cities' type='text' defaultValue={modal?.data?.cities || ""} required />
+                                <Input label='Tempat Lahir' placeholder='Masukkan Tempat Lahir' name='birth_place' type='text' defaultValue={modal?.data?.birth_place || ""} required />
+                                <Input label='Tanggal Lahir' placeholder='Masukkan Tanggal Lahir' name='birth_date' type='date' defaultValue={modal?.data?.birth_date || ""} required />
                             </div>
                             <div className='flex md:flex-row flex-col gap-2'>
-                                <Input label='Latitude' placeholder='Masukkan Latitude' name='lat' type='text' defaultValue={modal?.data?.lat || ""} required />
-                                <Input label='Longitude' placeholder='Masukkan Longitude' name='long' type='text' defaultValue={modal?.data?.long || ""} required />
+                                <Input label='Email' placeholder='Masukkan Email' name='email' type='email' defaultValue={modal?.data?.email || ""} required />
+                                <Input label='No Hanpdhone' placeholder='Masukkan No Hanpdhone' name='phone' type='number' defaultValue={modal?.data?.phone || ""} required />
                             </div>
                             <div className="group relative w-max">
                                 <button>
@@ -246,20 +276,46 @@ export default function Place({ table }: any) {
                                 <span
                                     className="pointer-events-none absolute -top-8 p-1 duration-150 left-0 w-max opacity-0 transition-opacity bg-green-500 rounded-md text-white group-hover:opacity-100"
                                 >
-                                    Latitude dan Longitude bisa didapatkan dari google maps berupa angka
+                                    Pastikan No Hanphone terhubung dengan Whatsapp
                                 </span>
-
                             </div>
-                            <Input label='Harga' placeholder='Masukkan Harga' name='price' type='number' defaultValue={modal?.data?.price || ""} required />
-                            <Input label='Gambar' accept='image/*' name='photo' type='file' defaultValue={""} onChange={(e) => { handleUpload(e) }} required />
+                            <div className='flex md:flex-row flex-col gap-2'>
+                                <div className='mt-2 w-full'>
+                                    <label htmlFor="locs" className='text-gray-500'>Lokasi</label>
+                                    <div className='mt-2 outline outline-green-300 focus:outline-green-400 rounded-md p-1'>
+                                        <select name="place_id" id='locs' onChange={(e) => {
+                                            places?.map((v: any) => {
+                                                if (v?.id == e.target.value) {
+                                                    setSelectPlace(v)
+                                                }
+                                            })
+                                        }} className='w-full focus:ring-0 focus:outline-none'>
+                                            <option value="" selected>Pilih Lokasi</option>
+                                            {
+                                                places?.map((v: any, i: number) => <option value={v?.id} key={i} selected={v?.id == modal?.data?.place_id} >{v?.name}</option>)
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <input type="text" className='hidden' name='place_name' value={selectPlace?.name} />
+                                <div className='mt-2 w-full'>
+                                    <label htmlFor="stats" className='text-gray-500'>Status</label>
+                                    <div className='mt-2 outline outline-green-300 focus:outline-green-400 rounded-md p-1'>
+                                        <select name="status" id='stats' className='w-full focus:ring-0 focus:outline-none'>
+                                            {
+                                                statusOptions?.map((v: any, i: number) => <option value={v?.value} key={i} selected={v?.value == modal?.data?.status || i == 0} >{v?.label}</option>)
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <Input label='Gambar' accept='image/*' name='photo' type='file' defaultValue={""} onChange={(e) => { handleUpload(e) }} />
                             <div className='flex items-center justify-center'>
                                 {
-                                    imageData?.length > 0 &&
+                                    imageData &&
                                     <>
                                         {
-                                            imageData?.map((v: any, i: number) => (
-                                                <img key={i} src={v.url} className='w-[300px] md:h-[300px]' alt='image' />
-                                            ))
+                                            !loading ? <img src={imageData?.url} className='w-[300px] md:h-[300px]' alt='image' /> : <h1 className='mt-4 text-lg uppercase text-center font-semibold' >Loading....</h1>
                                         }
                                     </>
                                 }

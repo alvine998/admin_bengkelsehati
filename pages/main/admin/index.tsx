@@ -17,7 +17,7 @@ export async function getServerSideProps(context: any) {
         const filters = {
 
         }
-        const result = await axios.get(CONFIG.base_url_api + `/admins?pagination=true&search=${search || ""}&page=${page-1 || 0}`, {
+        const result = await axios.get(CONFIG.base_url_api + `/admins?pagination=true&search=${search || ""}&page=${page - 1 || 0}`, {
             headers: { "bearer-token": 'bengkelsehati51' }
         })
         console.log(result.data);
@@ -51,9 +51,9 @@ export default function Admin({ table }: any) {
                 ...formData,
                 password: !formData?.password ? modal.data.password : formData?.password
             }
-            const result = await modal.key == 'create' ? axios.post(CONFIG.base_url_api + '/admin', payload, {
+            const result = modal.key == 'create' ? await axios.post(CONFIG.base_url_api + '/admin', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
-            }) : axios.patch(CONFIG.base_url_api + '/admin', payload, {
+            }) : await axios.patch(CONFIG.base_url_api + '/admin', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
             })
             Swal.fire({
@@ -63,10 +63,10 @@ export default function Admin({ table }: any) {
             setModal({ ...modal, open: false })
             router.push('')
             setLoading(false)
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
             Swal.fire({
-                text: "Gagal menyimpan data",
+                text: `${error.response.data.error_message}`,
                 icon: 'error'
             })
             setLoading(false)

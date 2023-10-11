@@ -70,9 +70,9 @@ export default function Bank({ table }: any) {
                 ...formData,
                 image: imageData?.url || null
             }
-            const result = await modal.key == 'create' ? axios.post(CONFIG.base_url_api + '/purchase', payload, {
+            const result = modal.key == 'create' ? await axios.post(CONFIG.base_url_api + '/purchase', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
-            }) : axios.patch(CONFIG.base_url_api + '/purchase', payload, {
+            }) : await axios.patch(CONFIG.base_url_api + '/purchase', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
             })
             Swal.fire({
@@ -83,10 +83,10 @@ export default function Bank({ table }: any) {
             setImageData(null)
             router.push('')
             setLoading(false)
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
             Swal.fire({
-                text: "Gagal menyimpan data",
+                text: `${error.response.data.error_message}`,
                 icon: 'error'
             })
             setLoading(false)

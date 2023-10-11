@@ -69,9 +69,9 @@ export default function Voucher({ table }: any) {
                 ...formData,
                 banner: imageData?.url || null
             }
-            const result = await modal.key == 'create' ? axios.post(CONFIG.base_url_api + '/voucher', payload, {
+            const result = modal.key == 'create' ? await axios.post(CONFIG.base_url_api + '/voucher', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
-            }) : axios.patch(CONFIG.base_url_api + '/voucher', payload, {
+            }) : await axios.patch(CONFIG.base_url_api + '/voucher', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
             })
             Swal.fire({
@@ -82,10 +82,10 @@ export default function Voucher({ table }: any) {
             setImageData(null)
             router.push('')
             setLoading(false)
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
             Swal.fire({
-                text: "Gagal menyimpan data",
+                text: `${error.response.data.error_message}`,
                 icon: 'error'
             })
             setLoading(false)

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React from 'react'
 import { FaTachometerAlt, FaBuilding, FaBookmark, FaUserTie } from 'react-icons/fa'
-import { FaBuildingColumns, FaMoneyBill1Wave, FaTicket, FaUser } from 'react-icons/fa6'
+import { FaBuildingColumns, FaMoneyBill1Wave, FaTicket, FaUser, FaUserCheck } from 'react-icons/fa6'
 import { GrTransaction } from 'react-icons/gr'
 export default function Sidebar() {
     const router = useRouter();
@@ -37,12 +37,12 @@ export default function Sidebar() {
             active: router.pathname?.includes('purchase'),
             icon: <FaBuildingColumns className='text-xl' />
         },
-        // {
-        //     name: "Keuangan",
-        //     href: "/main/finance",
-        //     active: router.pathname?.includes('finance'),
-        //     icon: <FaMoneyBill1Wave className='text-xl' />
-        // },
+        {
+            name: "Pegawai",
+            href: "/main/employee",
+            active: router.pathname?.includes('employee'),
+            icon: <FaUserCheck className='text-xl' />
+        },
         {
             name: "Transaksi",
             href: "/main/transaction",
