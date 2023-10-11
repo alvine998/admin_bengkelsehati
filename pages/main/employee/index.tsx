@@ -9,10 +9,12 @@ import { useRouter } from 'next/router'
 import React, { useState, useEffect } from 'react'
 import DataTable, { ExpanderComponentProps } from 'react-data-table-component'
 import Swal from 'sweetalert2'
-import { FaPencilAlt, FaTrashAlt } from 'react-icons/fa'
+import { FaPencilAlt, FaTrashAlt, FaInfoCircle } from 'react-icons/fa'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { storage } from '@/config/firebase'
 import { Purchase } from '@/types/purchase'
+import { Place } from '@/types/place'
+import { toMoney } from '@/utils'
 
 export async function getServerSideProps(context: any) {
     try {
@@ -20,7 +22,7 @@ export async function getServerSideProps(context: any) {
         const filters = {
 
         }
-        const result = await axios.get(CONFIG.base_url_api + `/purchases?pagination=true&search=${search || ""}&page=${page - 1 || 0}`, {
+        const result = await axios.get(CONFIG.base_url_api + `/employees?pagination=true&search=${search || ""}&page=${page - 1 || 0}`, {
             headers: { "bearer-token": 'bengkelsehati51' }
         })
         console.log(result.data);
@@ -38,12 +40,12 @@ export async function getServerSideProps(context: any) {
     }
 }
 
-export default function Bank({ table }: any) {
+export default function Place({ table }: any) {
     const router = useRouter();
     const [show, setShow] = useState<boolean>(false)
     const [modal, setModal] = useModal<any>()
     const [selectType, setSelectType] = useState('bank')
-    const [imageData, setImageData] = useState<any>()
+    const [imageData, setImageData] = useState<any>([])
     const handleUpload = (e: any) => {
         const preview = e.target.files[0]
         const fileName = preview?.name
@@ -52,7 +54,7 @@ export default function Bank({ table }: any) {
             .then(async (snapshot) => {
                 console.log('Image uploaded successfully!');
                 const url = await getDownloadURL(storageRef)
-                setImageData({ url: url })
+                setImageData([...imageData, { url: url }])
             })
             .catch((error) => {
                 console.error('Error uploading image: ', error);
@@ -68,11 +70,11 @@ export default function Bank({ table }: any) {
         try {
             const payload = {
                 ...formData,
-                image: imageData?.url || null
+                photo: imageData || null
             }
-            const result = await modal.key == 'create' ? axios.post(CONFIG.base_url_api + '/purchase', payload, {
+            const result = await modal.key == 'create' ? axios.post(CONFIG.base_url_api + '/employee', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
-            }) : axios.patch(CONFIG.base_url_api + '/purchase', payload, {
+            }) : axios.patch(CONFIG.base_url_api + '/employee', payload, {
                 headers: { "bearer-token": 'bengkelsehati51' }
             })
             Swal.fire({
@@ -98,7 +100,7 @@ export default function Bank({ table }: any) {
         const formData: any = Object.fromEntries(new FormData(e.target))
         setLoading(true)
         try {
-            const result = await axios.delete(CONFIG.base_url_api + `/purchase?id=${formData?.id}`, {
+            const result = await axios.delete(CONFIG.base_url_api + `/employee?id=${formData?.id}`, {
                 headers: { "bearer-token": 'bengkelsehati51' }
             })
             Swal.fire({
@@ -120,36 +122,47 @@ export default function Bank({ table }: any) {
 
     const columns: any = [
         {
-            name: "Nama",
+            name: "Nama Usaha",
             right: false,
-            selector: (row: Purchase) => row?.name
+            selector: (row: Place) => row?.name
         },
         {
-            name: "No Rekening",
+            name: "Alamat",
             right: false,
-            selector: (row: Purchase) => row?.account_number || "-"
+            width: '250px',
+            selector: (row: Place) => row?.address + ", " + row?.cities + ", " + row?.province
         },
         {
-            name: "Nama Pemilik",
+            name: "Biaya Jasa",
             right: false,
-            selector: (row: Purchase) => row?.account_name || "-"
+            selector: (row: Place) => toMoney(row?.price) || "-"
         },
         {
             name: "Tipe",
             right: false,
-            selector: (row: Purchase) => row?.type?.toUpperCase()
+            selector: (row: Place) => row?.long ? <a href={`https://maps.google.com/?q=${row?.lat},${row?.long}`} target='_blank' className='text-blue-500' >Lihat Lokasi</a> : "-"
         },
         {
             name: "Foto",
             right: false,
-            selector: (row: Purchase) => row?.image ? <a href={row.image} target='_blank' className='text-blue-500' >Lihat</a> : "-"
+            selector: (row: Place) => row?.photo?.length > 0 ? <>
+                {
+                    row?.photo?.map((v: any, i: number) => (
+                        <>
+                            <a href={v.url} key={i} target='_blank' className='text-blue-500' >Lihat Foto {i + 1}</a>
+                            <br />
+                        </>
+                    ))
+                }
+            </> : "-"
         },
         {
             name: "Aksi",
             right: false,
-            selector: (row: Purchase) => <>
+            selector: (row: Place) => <>
                 <button type='button' onClick={() => {
                     setModal({ ...modal, open: true, data: row, key: "update" })
+                    setImageData(row?.photo || [])
                 }} >
                     <FaPencilAlt className='text-green-500 w-7' />
                 </button>
@@ -168,7 +181,7 @@ export default function Bank({ table }: any) {
     return (
         <Layout>
             <div>
-                <h1 className='text-xl font-semibold'>Pembayaran</h1>
+                <h1 className='text-xl font-semibold'>Lokasi</h1>
             </div>
             <div className='mt-5'>
                 <div>
@@ -212,64 +225,45 @@ export default function Bank({ table }: any) {
                     <Modal
                         open={modal.open}
                         setOpen={() => { setModal({ ...modal, open: false }) }}
-                        title={modal.key == 'create' ? 'Tambah Data Pembayaran' : 'Ubah Data Pembayaran'}
+                        title={modal.key == 'create' ? 'Tambah Data Pegawai' : 'Ubah Data Pegawai'}
                     >
                         <form onSubmit={save}>
                             <input type="text" className='hidden' value={modal?.data?.id} name='id' />
-                            <div>
-                                <label htmlFor="status">Jenis Pembayaran</label>
-                                <div id='status' className='flex gap-5'>
-                                    <div className='flex gap-2'>
-                                        <input type='radio' defaultChecked={modal?.data?.type === "bank" || selectType === "bank"} onChange={(e) => {
-                                            setSelectType(e.target.value)
-                                        }} value={'bank'} name='type' />
-                                        <span>BANK</span>
-                                    </div>
-                                    <div className='flex gap-2'>
-                                        <input type='radio' defaultChecked={modal?.data?.type === "qris"} onChange={(e) => {
-                                            setSelectType(e.target.value)
-                                        }} value={'qris'} name='type' />
-                                        <span>QRIS</span>
-                                    </div>
-                                    <div className='flex gap-2'>
-                                        <input type='radio' defaultChecked={modal?.data?.type === "dana"} onChange={(e) => {
-                                            setSelectType(e.target.value)
-                                        }} value={'dana'} name='type' />
-                                        <span>DANA</span>
-                                    </div>
-                                </div>
+                            <Input label='Nama Usaha' placeholder='Masukkan Nama Usaha' name='name' defaultValue={modal?.data?.name || ""} required />
+                            <Input label='Alamat' placeholder='Masukkan Alamat' name='address' type='text' defaultValue={modal?.data?.address || ""} required />
+                            <div className='flex md:flex-row flex-col gap-2'>
+                                <Input label='Provinsi' placeholder='Masukkan Provinsi' name='province' type='text' defaultValue={modal?.data?.province || ""} required />
+                                <Input label='Kab/Kota' placeholder='Masukkan Kab/Kota' name='cities' type='text' defaultValue={modal?.data?.cities || ""} required />
                             </div>
-                            {
-                                selectType == 'bank' &&
-                                <>
-                                    <Input label='Nama Bank' placeholder='Masukkan Nama Bank' name='name' defaultValue={modal?.data?.name || ""} required />
-                                    <Input label='Nama Pemilik Rekening' placeholder='Masukkan Nama Pemilik Rekening' name='account_name' defaultValue={modal?.data?.account_name || ""} required />
-                                    <Input label='No Rekening' placeholder='Masukkan No Rekening' name='account_number' type='number' defaultValue={modal?.data?.account_number || ""} required />
-                                </>
-                            }
-                            {
-                                selectType == 'qris' &&
-                                <>
-                                    <Input label='Nama Usaha' placeholder='Masukkan Nama Usaha' name='name' defaultValue={modal?.data?.name || ""} required />
-                                    {/* <Input label='Nama Pemilik Rekening' placeholder='Masukkan Nama Pemilik Rekening' name='accouont_name' defaultValue={modal?.data?.accouont_name || ""} required /> */}
-                                    <Input label='No QRIS' placeholder='Masukkan No QRIS' name='account_number' type='number' defaultValue={modal?.data?.account_number || ""} required />
-                                    <Input label='Gambar QRIS' accept='image/*' name='image' type='file' defaultValue={modal?.data?.image || ""} onChange={(e) => { handleUpload(e) }} required />
-                                    <div className='flex items-center justify-center'>
+                            <div className='flex md:flex-row flex-col gap-2'>
+                                <Input label='Latitude' placeholder='Masukkan Latitude' name='lat' type='text' defaultValue={modal?.data?.lat || ""} required />
+                                <Input label='Longitude' placeholder='Masukkan Longitude' name='long' type='text' defaultValue={modal?.data?.long || ""} required />
+                            </div>
+                            <div className="group relative w-max">
+                                <button>
+                                    <FaInfoCircle className='text-green-400 text-lg' />
+                                </button>
+                                <span
+                                    className="pointer-events-none absolute -top-8 p-1 duration-150 left-0 w-max opacity-0 transition-opacity bg-green-500 rounded-md text-white group-hover:opacity-100"
+                                >
+                                    Latitude dan Longitude bisa didapatkan dari google maps berupa angka
+                                </span>
+
+                            </div>
+                            <Input label='Harga' placeholder='Masukkan Harga' name='price' type='number' defaultValue={modal?.data?.price || ""} required />
+                            <Input label='Gambar' accept='image/*' name='photo' type='file' defaultValue={""} onChange={(e) => { handleUpload(e) }} required />
+                            <div className='flex items-center justify-center'>
+                                {
+                                    imageData?.length > 0 &&
+                                    <>
                                         {
-                                            imageData &&
-                                            <img src={imageData.url} className='w-[300px] md:h-[300px]' alt='image-qris' />
+                                            imageData?.map((v: any, i: number) => (
+                                                <img key={i} src={v.url} className='w-[300px] md:h-[300px]' alt='image' />
+                                            ))
                                         }
-                                    </div>
-                                </>
-                            }
-                            {
-                                selectType == 'dana' &&
-                                <>
-                                    <Input label='Nama Pemilik' placeholder='Masukkan Nama Pemilik' name='name' defaultValue={modal?.data?.name || ""} required />
-                                    {/* <Input label='Nama Pemilik Rekening' placeholder='Masukkan Nama Pemilik Rekening' name='accouont_name' defaultValue={modal?.data?.accouont_name || ""} required /> */}
-                                    <Input label='No Dana' placeholder='Masukkan No Dana' name='account_number' type='number' defaultValue={modal?.data?.account_number || ""} required />
-                                </>
-                            }
+                                    </>
+                                }
+                            </div>
                             <button disabled={loading} className='md:mt-4 w-full h-9 bg-green-500 hover:bg-green-600 rounded-lg justify-center items-center text-center text-white'>
                                 {loading ? "Menyimpan..." : "Simpan"}
                             </button>
@@ -281,11 +275,11 @@ export default function Bank({ table }: any) {
                     <Modal
                         open={modal.open}
                         setOpen={() => { setModal({ ...modal, open: false }) }}
-                        title='Hapus Data Pembayaran'
+                        title='Hapus Data Pegawai'
                     >
                         <form onSubmit={remove}>
                             <input type="text" className='hidden' value={modal.data.id} name='id' />
-                            <p className='text-center'>Apakah anda yakin ingin menghapus data {modal.data.name}?</p>
+                            <p className='text-center'>Apakah anda yakin ingin menghapus admin {modal.data.name}?</p>
                             <button disabled={loading} className='md:mt-4 w-full h-9 bg-red-500 hover:bg-red-600 rounded-lg justify-center items-center text-center text-white'>
                                 {loading ? "Menghapus..." : "Hapus"}
                             </button>

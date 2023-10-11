@@ -19,12 +19,12 @@ export default function Sidebar() {
             active: router.pathname?.includes('place'),
             icon: <FaBuilding className='text-xl' />
         },
-        {
-            name: "Banner",
-            href: "/main/banner",
-            active: router.pathname?.includes('banner'),
-            icon: <FaBookmark className='text-xl' />
-        },
+        // {
+        //     name: "Banner",
+        //     href: "/main/banner",
+        //     active: router.pathname?.includes('banner'),
+        //     icon: <FaBookmark className='text-xl' />
+        // },
         {
             name: "Voucher",
             href: "/main/voucher",
@@ -37,12 +37,12 @@ export default function Sidebar() {
             active: router.pathname?.includes('purchase'),
             icon: <FaBuildingColumns className='text-xl' />
         },
-        {
-            name: "Keuangan",
-            href: "/main/finance",
-            active: router.pathname?.includes('finance'),
-            icon: <FaMoneyBill1Wave className='text-xl' />
-        },
+        // {
+        //     name: "Keuangan",
+        //     href: "/main/finance",
+        //     active: router.pathname?.includes('finance'),
+        //     icon: <FaMoneyBill1Wave className='text-xl' />
+        // },
         {
             name: "Transaksi",
             href: "/main/transaction",

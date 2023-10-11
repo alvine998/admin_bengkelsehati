@@ -79,6 +79,7 @@ export default function Voucher({ table }: any) {
                 icon: 'success'
             })
             setModal({ ...modal, open: false })
+            setImageData(null)
             router.push('')
             setLoading(false)
         } catch (error) {
@@ -252,7 +253,7 @@ export default function Voucher({ table }: any) {
                                 <label htmlFor="status">Jenis Voucher</label>
                                 <div id='status' className='flex gap-5'>
                                     <div className='flex gap-2'>
-                                        <input type='radio' defaultChecked={modal?.data?.type === "cashback"} value={'cashback'} name='type' />
+                                        <input type='radio' defaultChecked={modal?.data?.type === "cashback" || true} value={'cashback'} name='type' />
                                         <span>Cashback</span>
                                     </div>
                                     <div className='flex gap-2'>

@@ -18,7 +18,7 @@ export async function getServerSideProps(context: any) {
 export default function Dasboard() {
     return (
         <Layout>
-            <div className='px-20 pt-10'>
+            <div className='px-20 pt-0'>
                 <div className='w-full bg-green-400 p-5 rounded-lg'>
                     <h1 className='text-white text-2xl font-semibold font-sans'>Selamat Datang di Dashboard Aplikasi Bengkel Muslimah</h1>
                 </div>
