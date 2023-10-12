@@ -87,6 +87,7 @@ export default function Transactions({ table }: any) {
         {
             name: "Lokasi",
             right: false,
+            width:'250px',
             selector: (row: Transaction) => row?.place_name
         },
         {
