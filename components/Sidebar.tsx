@@ -45,7 +45,7 @@ export default function Sidebar() {
         },
         {
             name: "Transaksi",
-            href: "/main/transaction",
+            href: "/main/transaction/unpaid",
             active: router.pathname?.includes('transaction'),
             icon: <GrTransaction className='text-xl' />
         },
@@ -74,8 +74,8 @@ export default function Sidebar() {
             <div className='md:mt-5'>
                 {
                     navigations?.map((val: any, i: number) => (
-                        <div className={`hover:bg-gray-400 ${val.active && 'bg-gray-400'} w-full md:p-2 md:pl-5 duration-150 h-auto mt-1`}>
-                            <Link href={val?.href} key={i} className='flex gap-3 items-center'>
+                        <div key={i} className={`hover:bg-gray-400 ${val.active && 'bg-gray-400'} w-full md:p-2 md:pl-5 duration-150 h-auto mt-1`}>
+                            <Link href={val?.href} className='flex gap-3 items-center'>
                                 {val?.icon && val?.icon}
                                 <p>{val?.name}</p>
                             </Link>
