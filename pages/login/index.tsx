@@ -7,8 +7,10 @@ import Swal from 'sweetalert2';
 
 export default function Login() {
     const router = useRouter();
+    const [loading, setLoading] = useState<boolean>(false)
     const handleLogin = async (e: any) => {
         e?.preventDefault()
+        setLoading(true)
         const formData: any = Object.fromEntries(new FormData(e.target))
         try {
             const payload = {
@@ -23,8 +25,10 @@ export default function Login() {
                 text: "Berhasil Login",
                 icon: "success"
             })
+            setLoading(false)
             router.push('/main/dashboard')
         } catch (error) {
+            setLoading(false)
             console.log(error);
             Swal.fire({
                 text: "Gagal Login",
@@ -57,8 +61,8 @@ export default function Login() {
                         <div className='w-full md:w-[300px] mt-10'>
                             <Input label='' placeholder='Email' name='email' />
                             <Input label='' placeholder='Password' type='password' name='password' />
-                            <button className='md:mt-4 w-full h-10 bg-green-500 hover:bg-green-600 rounded-lg justify-center items-center text-center text-white'>
-                                Masuk
+                            <button type='submit' disabled={loading} className='md:mt-4 w-full h-10 bg-green-500 hover:bg-green-600 rounded-lg justify-center items-center text-center text-white'>
+                                {loading ? "Menunggu..." : "Masuk"}
                             </button>
                         </div>
                     </form>

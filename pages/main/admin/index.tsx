@@ -24,8 +24,8 @@ export async function getServerSideProps(context: any) {
         return {
             props: {
                 table: {
-                    ...result.data,
-                    data: result.data.items.rows || [],
+                    ...result?.data,
+                    data: result?.data?.items?.rows || [],
                     total_items: result.data.items.count || 0
                 }
             }
