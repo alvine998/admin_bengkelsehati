@@ -28,6 +28,14 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
         <meta name="theme-color" content="#ffffff" />
         <title>Bengkel Muslimah</title>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-11397669685"></script>
+        <script>
+          {`window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'AW-11397669685');`}
+        </script>
       </Head>
       <Component {...pageProps} />
     </>
